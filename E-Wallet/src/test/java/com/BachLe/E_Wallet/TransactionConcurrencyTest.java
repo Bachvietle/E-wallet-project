@@ -1,6 +1,6 @@
 package com.BachLe.E_Wallet;
 
-import com.BachLe.E_Wallet.common.security.CustomUserDetails;
+import com.BachLe.E_Wallet.common.entity.CustomUserDetails;
 import com.BachLe.E_Wallet.domain.transaction.dto.request.TransferRequest;
 import com.BachLe.E_Wallet.domain.transaction.service.TransactionService;
 import com.BachLe.E_Wallet.domain.wallet.entity.Wallet;
@@ -28,8 +28,8 @@ public class TransactionConcurrencyTest {
 
     @Test
     public void testConcurrentTransfers() throws InterruptedException {
-        // --- 1. SETUP DỮ LIỆU ---
-        // TODO: Bạn hãy tạo thủ công 2 user và 2 wallet trong DB,
+        // 1. SETUP DỮ LIỆU
+        // tạo thủ công 2 user và 2 wallet trong DB,
         // Sau đó điền 2 UUID wallet thực tế vào đây
         UUID senderWalletId = UUID.fromString("f67feb62-0dbf-46e9-9e51-8a9557994cd2");
         UUID receiverWalletId = UUID.fromString("9395d6fc-0130-46d0-8116-cfa43fca4aea");
@@ -42,29 +42,33 @@ public class TransactionConcurrencyTest {
                 "password",
                 List.of()
         );
+
         // Bơm vào Security Context
         UsernamePasswordAuthenticationToken authentication =
                 new UsernamePasswordAuthenticationToken(mockUser, null, mockUser.getAuthorities());
 
         SecurityContextHolder.getContext().setAuthentication(authentication);
-        // Mock Security Context để bypass cái "CustomUserDetails" trong TransactionService
-        // Bạn cần tự chế lại dòng mock này sao cho giống với CustomUserDetails thực tế của bạn
-        // ... SecurityContextHolder.getContext().setAuthentication(...);
+
+        // Thiết lập ThreadPool
         int numberOfThreads = 100;
         ExecutorService threadPool = Executors.newFixedThreadPool(numberOfThreads);
 
         ExecutorService executorService = new DelegatingSecurityContextExecutorService(threadPool);
 
         CountDownLatch latch = new CountDownLatch(numberOfThreads);
-        // --- 2. BẮN 100 REQUEST CÙNG LÚC ---
+
+        // 2. BẮN 100 REQUEST CÙNG LÚC
         for (int i = 0; i < numberOfThreads; i++) {
             executorService.execute(() -> {
                 try {
+
+                    // tạo request
                     TransferRequest request = new TransferRequest();
                     request.setReceiverWalletId(receiverWalletId);
                     request.setAmount(new BigDecimal("1000")); // Chuyển 1000đ mỗi lần
                     request.setMessage("Test race condition");
 
+                    // chạy hàm service
                     transactionService.executeTransfer(request, UUID.randomUUID().toString());
                 } catch (Exception e) {
                     System.err.println("Giao dịch lỗi: " + e.getMessage());
@@ -76,7 +80,8 @@ public class TransactionConcurrencyTest {
         // Đợi cả 100 thread chạy xong
         latch.await();
         executorService.shutdown();
-        // --- 3. KIỂM TRA KẾT QUẢ ---
+
+        // 3. KIỂM TRA KẾT QUẢ
         Wallet sender = walletRepository.findById(senderWalletId).orElseThrow();
         Wallet receiver = walletRepository.findById(receiverWalletId).orElseThrow();
         System.out.println("Số dư Ví Gửi: " + sender.getBalance());

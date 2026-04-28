@@ -4,21 +4,22 @@ import com.BachLe.E_Wallet.common.dto.ApiResponse;
 import com.BachLe.E_Wallet.domain.auth.dto.GoogleLoginRequest;
 import com.BachLe.E_Wallet.domain.auth.dto.UserLoginRequest;
 import com.BachLe.E_Wallet.domain.auth.dto.UserLoginResponse;
+import com.BachLe.E_Wallet.domain.auth.dto.UserRegisterRequest;
 import com.BachLe.E_Wallet.domain.auth.service.AuthService;
 import com.BachLe.E_Wallet.domain.user.entity.User;
+import jakarta.mail.MessagingException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -29,8 +30,28 @@ public class AuthController {
 
     private final AuthService authService;
 
+    @Value("${app.auth.frontendUrl}")
+    private String frontEndUrl;
+
     @PostMapping("/register")
-    public void register(){
+    public ResponseEntity<ApiResponse> register(@RequestBody UserRegisterRequest request) throws MessagingException {
+
+        authService.register(request);
+
+        return new ResponseEntity<>(ApiResponse.success("Đăng kí thành công", null), HttpStatus.CREATED);
+    }
+
+    @GetMapping("/verify_register_token")
+    public void verifyRegisterToken(@RequestParam String token,  HttpServletResponse response) throws IOException {
+
+        boolean success = authService.verifyRegisterToken(token);
+
+       if (success){
+            response.sendRedirect(frontEndUrl + "/login?verified=success");
+       } else {
+           // Trường hợp lỗi khác (token rác, không tìm thấy...)
+           response.sendRedirect(frontEndUrl + "/login?error=invalid_token");
+       }
 
     }
 

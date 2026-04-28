@@ -1,6 +1,6 @@
 package com.BachLe.E_Wallet.domain.auth.service;
 
-import com.BachLe.E_Wallet.common.security.CustomUserDetails;
+import com.BachLe.E_Wallet.common.entity.CustomUserDetails;
 import com.BachLe.E_Wallet.common.security.JwtService;
 import com.BachLe.E_Wallet.domain.auth.dto.UserLoginRequest;
 import com.BachLe.E_Wallet.domain.auth.dto.UserLoginResponse;
@@ -14,8 +14,6 @@ import com.BachLe.E_Wallet.domain.user.entity.User;
 import com.BachLe.E_Wallet.domain.user.entity.Role;
 import com.BachLe.E_Wallet.domain.auth.entity.TokenType;
 import com.BachLe.E_Wallet.domain.user.repository.UserRepository;
-import com.BachLe.E_Wallet.domain.wallet.entity.Wallet;
-import com.BachLe.E_Wallet.domain.wallet.repository.WalletRepository;
 import com.BachLe.E_Wallet.domain.wallet.service.WalletService;
 import com.google.api.client.googleapis.auth.oauth2.GoogleIdToken;
 import com.google.api.client.googleapis.auth.oauth2.GoogleIdTokenVerifier;
@@ -51,8 +49,6 @@ public class AuthService {
     private final GoogleIdTokenVerifier googleIdTokenVerifier;
     private final WalletService walletService;
 
-    @Value("${app.auth.frontendUrl}")
-    private String frontEndUrl;
 
     public void register(UserRegisterRequest request) throws MessagingException {
 
@@ -99,9 +95,8 @@ public class AuthService {
 
     }
 
-    public void verifyRegisterToken(String token, HttpServletResponse response) throws IOException {
+    public boolean verifyRegisterToken(String token) throws IOException {
 
-        try {
             VerificationToken verificationToken = verificationTokenRepository.findByToken(token)
                     .orElseThrow(() -> new RuntimeException("Token không hợp lệ"));
 
@@ -109,25 +104,20 @@ public class AuthService {
 
                 verificationTokenRepository.delete(verificationToken);
 
-                response.sendRedirect(frontEndUrl + "/login?error=token_expired");
-
-                return;
+                return false;
             }
 
+            // Cập nhật is_vèified
             User user = verificationToken.getUser();
             user.setVerified(true);
             userRepository.save(user);
+
+            // Tài khoản đc xác minh đki thành công thì tạo ví luôn
             walletService.createWallet(user.getId());
 
             verificationTokenRepository.delete(verificationToken);
 
-            response.sendRedirect(frontEndUrl + "/login?verified=success");
-
-        } catch (Exception e) {
-            // Trường hợp lỗi khác (token rác, không tìm thấy...)
-            response.sendRedirect(frontEndUrl + "/login?error=invalid_token");
-        }
-
+            return true;
     }
 
 
@@ -157,7 +147,6 @@ public class AuthService {
             User userProxy = userRepository.getReferenceById(user.getId());
 
             RefreshToken rt = RefreshToken.builder()
-                    .id(UUID.fromString(UUID.randomUUID().toString()))
                     .token(refreshToken)
                     .user(userProxy)
                     .expiryDate(LocalDateTime.now().plusDays(7))

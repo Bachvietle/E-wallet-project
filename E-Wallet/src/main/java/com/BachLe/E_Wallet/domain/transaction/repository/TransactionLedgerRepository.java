@@ -11,5 +11,6 @@ import java.util.UUID;
 
 public interface TransactionLedgerRepository extends JpaRepository<TransactionLedger, UUID> {
 
+    @Query("SELECT tl FROM TransactionLedger tl JOIN FETCH tl.transaction WHERE tl.walletId = :walletId")
     Page<TransactionLedger> findTransactionLedgerByWalletId(UUID walletId, Pageable pageable);
 }

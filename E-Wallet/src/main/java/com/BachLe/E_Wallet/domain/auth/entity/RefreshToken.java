@@ -1,7 +1,6 @@
 package com.BachLe.E_Wallet.domain.auth.entity;
 
 import com.BachLe.E_Wallet.common.entity.BaseEntity;
-import com.BachLe.E_Wallet.common.security.CustomUserDetails;
 import com.BachLe.E_Wallet.domain.user.entity.User;
 import jakarta.persistence.*;
 import lombok.*;

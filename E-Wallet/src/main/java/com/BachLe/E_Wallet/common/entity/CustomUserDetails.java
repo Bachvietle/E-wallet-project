@@ -1,4 +1,4 @@
-package com.BachLe.E_Wallet.common.security;
+package com.BachLe.E_Wallet.common.entity;
 
 import lombok.Getter;
 import org.springframework.security.core.GrantedAuthority;

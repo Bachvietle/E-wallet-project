@@ -1,8 +1,9 @@
 package com.BachLe.E_Wallet.domain.transaction.service;
 
-import com.BachLe.E_Wallet.common.security.CustomUserDetails;
+import com.BachLe.E_Wallet.common.entity.CustomUserDetails;
 import com.BachLe.E_Wallet.domain.transaction.dto.request.TransferRequest;
 import com.BachLe.E_Wallet.common.entity.Fee;
+import com.BachLe.E_Wallet.domain.transaction.dto.response.TransactionLedgerDto;
 import com.BachLe.E_Wallet.domain.transaction.dto.response.TransferResponse;
 import com.BachLe.E_Wallet.domain.transaction.entity.Transaction;
 import com.BachLe.E_Wallet.domain.transaction.entity.TransactionLedger;
@@ -12,6 +13,10 @@ import com.BachLe.E_Wallet.domain.wallet.entity.Wallet;
 import com.BachLe.E_Wallet.domain.wallet.repository.WalletRepository;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -29,7 +34,7 @@ public class TransactionService {
     private final TransactionLedgerRepository transactionLedgerRepository;
 
     @Transactional
-    public void executeTransfer(TransferRequest request, String idempotencyKey){
+    public TransferResponse executeTransfer(TransferRequest request, String idempotencyKey) {
 
         /// 1. Lấy senderId từ accessToken -> senderWalletId
         CustomUserDetails userDetails = (CustomUserDetails) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
@@ -44,11 +49,11 @@ public class TransactionService {
 
 
         /// 2. Ktra số tiền gửi, id người nhận != người gửi
-        if (amount.compareTo(BigDecimal.ZERO) <= 0){
+        if (amount.compareTo(BigDecimal.ZERO) <= 0) {
             throw new RuntimeException("Số tiền gửi phải > 0");
         }
 
-        if (senderWalletId.equals(receiverWalletId)){
+        if (senderWalletId.equals(receiverWalletId)) {
             throw new RuntimeException("Không được tự gửi tiền cho mình");
         }
 
@@ -71,7 +76,7 @@ public class TransactionService {
 
         Wallet receiverWallet = secondWallet.getId().equals(receiverWalletId) ? secondWallet : firstWallet;
 
-        if (senderWallet.getStatus() != Wallet.WalletStatus.ACTIVE || receiverWallet.getStatus() != Wallet.WalletStatus.ACTIVE){
+        if (senderWallet.getStatus() != Wallet.WalletStatus.ACTIVE || receiverWallet.getStatus() != Wallet.WalletStatus.ACTIVE) {
             throw new RuntimeException("Ví bị khóa");
         }
 
@@ -121,6 +126,46 @@ public class TransactionService {
                 .build();
 
         transactionLedgerRepository.saveAll(List.of(senderLedger, receiverLedger));
+
+        return TransferResponse.builder()
+                .senderWalletId(senderWalletId)
+                .receiverWalletId(receiverWalletId)
+                .amount(amount)
+                .message(request.getMessage())
+                .senderBalanceAfter(senderBalanceAfter)
+                .receiverBalanceAfter(receiverBalanceAfter)
+                .transactionCode(newTransaction.getId())
+                .build();
     }
 
+
+    public Page<TransactionLedgerDto> getTransactionHistory(int page, int size) {
+
+        CustomUserDetails userDetails = (CustomUserDetails) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+
+        UUID walletId = userDetails.getWalletId();
+
+        Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
+
+        Page<TransactionLedger> transactionLedgerPage = transactionLedgerRepository.findTransactionLedgerByWalletId(walletId, pageable);
+
+        return transactionLedgerPage.map(transactionLedger -> mapToDto(transactionLedger));
+
+    }
+
+    private TransactionLedgerDto mapToDto(TransactionLedger transactionLedger) {
+
+        Transaction transaction = transactionLedger.getTransaction();
+
+        return TransactionLedgerDto.builder()
+                .transactionCode(transaction.getId())
+                .walletId(transactionLedger.getWalletId())
+                .direction(transactionLedger.getDirection())
+                .amount(transactionLedger.getAmount())
+                .balanceAfter(transactionLedger.getBalanceAfter())
+                .message(transaction.getMessage())
+                .transactionType(transaction.getTransactionType())
+                .createdAt(transaction.getCreatedAt())
+                .build();
+    }
 }

@@ -1,10 +1,8 @@
 package com.BachLe.E_Wallet.domain.user.service;
 
-import com.BachLe.E_Wallet.common.security.CustomUserDetails;
+import com.BachLe.E_Wallet.common.entity.CustomUserDetails;
 import com.BachLe.E_Wallet.domain.user.entity.User;
 import com.BachLe.E_Wallet.domain.user.repository.UserRepository;
-import com.BachLe.E_Wallet.domain.wallet.entity.Wallet;
-import com.BachLe.E_Wallet.domain.wallet.repository.WalletRepository;
 import com.BachLe.E_Wallet.domain.wallet.service.WalletService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
