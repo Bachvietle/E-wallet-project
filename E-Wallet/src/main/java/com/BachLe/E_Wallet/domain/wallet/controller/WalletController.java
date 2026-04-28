@@ -35,8 +35,8 @@ public class WalletController {
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
 
-    @GetMapping("/history")
-    public ResponseEntity<ApiResponse> getHistory(
+    @GetMapping("/transaction-history")
+    public ResponseEntity<ApiResponse> getTransactionHistory(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size
     ) {
