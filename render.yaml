@@ -1,0 +1,71 @@
+
+ # render.yaml là provider config cho Render.
+
+ # Service config
+services:
+  - type: web
+    name: e-wallet-api
+    runtime: docker
+    plan: free
+    region: singapore
+    branch: main
+    autoDeploy: true
+    dockerfilePath: ./E-Wallet/Dockerfile
+    dockerContext: ./E-Wallet
+    healthCheckPath: /health
+
+    envVars:
+      - key: SPRING_PROFILES_ACTIVE
+        value: docker
+
+        # 1. Database Supabase (Điền trong Render rồi được tự động map vào)
+      - key: SPRING_DATASOURCE_URL
+        sync: false
+      - key: SPRING_DATASOURCE_USERNAME
+        sync: false
+      - key: SPRING_DATASOURCE_PASSWORD
+        sync: false
+      - key: SPRING_DATASOURCE_HIKARI_MAXIMUM_POOL_SIZE
+        value: "5"
+
+        # 2. Redis (Render tự tạo Redis/Key Value và inject)
+      - key: SPRING_DATA_REDIS_URL
+        fromDatabase:
+          name: e-wallet-redis
+          property: connectionString
+
+      # 3. RabbitMQ - CloudAMQP (Từ URL amqps://user:password@host/vhost, tách ra)
+      - key: SPRING_RABBITMQ_HOST
+        sync: false
+      - key: SPRING_RABBITMQ_PORT
+        value: "5671"
+      - key: SPRING_RABBITMQ_USERNAME
+        sync: false
+      - key: SPRING_RABBITMQ_PASSWORD
+        sync: false
+      - key: SPRING_RABBITMQ_VIRTUAL_HOST
+        sync: false
+      - key: SPRING_RABBITMQ_SSL_ENABLED
+        value: "true"
+      #
+
+      - key: APP_JWT_SECRET
+        generateValue: true
+      - key: APP_GOOGLE_CLIENT_ID
+        sync: false
+      - key: SPRING_MAIL_USERNAME
+        sync: false
+      - key: SPRING_MAIL_PASSWORD
+        sync: false
+      - key: APP_AUTH_FRONTEND_URL
+        sync: false
+      - key: APP_JWT_ACCESS_EXPIRATION
+        value: "3600000"
+      - key: APP_JWT_REFRESH_EXPIRATION
+        value: "7200000"
+
+databases:
+  - name: e-wallet-redis
+    plan: free
+    maxmemoryPolicy: allkeys-lru
+    ipAllowList: []
