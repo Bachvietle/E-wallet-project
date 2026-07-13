@@ -30,7 +30,8 @@ services:
 
         # 2. Redis (Render tự tạo Redis/Key Value và inject)
       - key: SPRING_DATA_REDIS_URL
-        fromDatabase:
+        fromService:
+          type: keyvalue
           name: e-wallet-redis
           property: connectionString
 
@@ -64,8 +65,8 @@ services:
       - key: APP_JWT_REFRESH_EXPIRATION
         value: "7200000"
 
-databases:
-  - name: e-wallet-redis
+  - type: keyvalue
+    name: e-wallet-redis
     plan: free
     maxmemoryPolicy: allkeys-lru
     ipAllowList: []
