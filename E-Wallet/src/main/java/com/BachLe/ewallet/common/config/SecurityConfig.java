@@ -33,6 +33,7 @@ public class SecurityConfig {
                 .csrf(AbstractHttpConfigurer::disable) // Tắt CSRF vì dùng JWT (Stateless)
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/user/auth/**").permitAll() // Cho phép đăng ký/đăng nhập công khai
+                        .requestMatchers("/health").permitAll()
                         .anyRequest().authenticated()
                 )
                 .sessionManagement(session -> session
