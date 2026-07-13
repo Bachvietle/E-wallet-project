@@ -16,14 +16,13 @@ public class EmailConsumer {
     private final EmailService emailService;
 
     @RabbitListener(queues = RabbitMQConfig.EMAIL_QUEUE, containerFactory = "emailListenerContainerFactory")
-    public void processSendRegisterLink(UserRegisterEvent event) {
-
-        log.info("Đã gửi email");
+    public void processSendRegisterLink(UserRegisterEvent event) throws MessagingException {
 
         try {
             emailService.sendVerifyRegisterMail(event.getVerifyLink(), event.getUserMail());
+            log.info("Đã gửi email");
         } catch (MessagingException e) {
-            throw new RuntimeException(e);
+            throw new MessagingException("Failed to send verification email", e);
         }
 
     }
