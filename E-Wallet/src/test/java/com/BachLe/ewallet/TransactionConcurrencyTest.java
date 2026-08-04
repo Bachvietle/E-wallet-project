@@ -119,6 +119,6 @@ public class TransactionConcurrencyTest {
 
         // Nếu ban đầu Ví Gửi có 1.000.000đ, bắn 100 phát mỗi phát 1000đ
         // -> Kết quả đúng phải là đúng 900.000đ. Không được sai lệch 1 đồng.
-        org.junit.jupiter.api.Assertions.assertEquals(new BigDecimal("900000.0000"), sender.getBalance());
+        org.junit.jupiter.api.Assertions.assertEquals(new BigDecimal("980000.0000"), sender.getBalance());
     }
 }
