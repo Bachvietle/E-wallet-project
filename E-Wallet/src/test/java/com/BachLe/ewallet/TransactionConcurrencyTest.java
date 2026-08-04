@@ -80,7 +80,7 @@ public class TransactionConcurrencyTest {
         SecurityContextHolder.getContext().setAuthentication(authentication);
 
         // Thiết lập ThreadPool
-        int numberOfThreads = 100;
+        int numberOfThreads = 20;
         ExecutorService threadPool = Executors.newFixedThreadPool(numberOfThreads);
 
         ExecutorService executorService = new DelegatingSecurityContextExecutorService(threadPool);

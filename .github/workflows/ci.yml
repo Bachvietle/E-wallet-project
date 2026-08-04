@@ -40,6 +40,7 @@ jobs:
         ports:
           - 5672:5672
 
+   # Bắt đầu các bước chạy test
     defaults:
       run:
         working-directory: ./E-Wallet
