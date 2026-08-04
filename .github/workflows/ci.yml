@@ -58,9 +58,7 @@ jobs:
 
     - name: Build and Test with Maven
       env:
-        SPRING_DATASOURCE_URL: jdbc:postgresql://localhost:5432/e-walletdbs
-        SPRING_DATASOURCE_USERNAME: postgres
-        SPRING_DATASOURCE_PASSWORD: ci_test_pass
+        SPRING_PROFILES_ACTIVE: ci
       run: mvn -B clean package --file pom.xml
       
     - name: Upload JAR Artifact
