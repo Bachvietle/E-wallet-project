@@ -1,45 +1,65 @@
 name: Java CI with Maven
 
-
-# 1. TRIGGER: Khi nào thì ci này được chạy?
 on:
   push:
     branches: [ "main", "dev" ]
-
-  # Chạy cả khi có người tạo Pull Request để review code trước khi merge
   pull_request:
     branches: [ "main", "dev" ]
 
-# 2. Công việc cần làm gì?
 jobs:
-
   build:
-    runs-on: ubuntu-latest # GitHub cấp cho ta 1 máy ảo Linux miễn phí
-    
-    # Thiết lập thư mục làm việc mặc định cho các bước (vì project maven nằm trong thư mục con)
+    runs-on: ubuntu-latest
+
+    # Khởi tạo các Services (Database, Cache, Message Broker) ngay trên máy ảo Github Actions
+    services:
+      # Cấu hình PostgreSQL
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: ci_test_pass
+          POSTGRES_DB: e-walletdbs
+        ports:
+          - 5432:5432
+        # Đảm bảo DB khởi động xong mới chạy test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+          
+      # Cấu hình Redis
+      redis:
+        image: redis:7
+        ports:
+          - 6379:6379
+          
+      # Cấu hình RabbitMQ
+      rabbitmq:
+        image: rabbitmq:3-management
+        ports:
+          - 5672:5672
+
     defaults:
       run:
         working-directory: ./E-Wallet
 
     steps:
-
-    # 1. Lấy code từ repo về máy ảo
     - name: Checkout code
       uses: actions/checkout@v4
 
-    # 2. Cài đặt môi trường
-    - name: Set up JDK 17
+    - name: Set up JDK 21
       uses: actions/setup-java@v4
       with:
-        java-version: '17'
+        java-version: '21'
         distribution: 'temurin'
-        cache: maven # Tự động cache thư viện maven để các lần chạy sau nhanh hơn
+        cache: maven
 
-    # 3. Chạy Maven để Compile và Test
     - name: Build and Test with Maven
+      env:
+          SPRING_DATASOURCE_PASSWORD: ci_test_pass
       run: mvn -B clean package --file pom.xml
       
-    # Tùy chọn: Upload file .jar sau khi build thành công (để có thể tải về xem thử)
     - name: Upload JAR Artifact
       uses: actions/upload-artifact@v4
       with:
